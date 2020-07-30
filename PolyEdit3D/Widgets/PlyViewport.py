@@ -9,7 +9,13 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         super().__init__()
         self.bg_color = (0.2, 0.3, 0.3, 1.0)
 
-        PlyViewportWidget.instance_list.append(self)
+        self.__initUI()
+
+        #PlyViewportWidget.instance_list.append(self)
+
+    def __initUI(self):
+        self.setLayout(QtWidgets.QHBoxLayout())
+        self.layout().setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignCenter)
 
     def initializeGL(self):
         pass
@@ -24,3 +30,7 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
     def keyPressEvent(self, event:QtGui.QKeyEvent):
         if event.key() == QtCore.Qt.Key_Escape:
             QtWidgets.QApplication.exit()
+        elif event.key() == QtCore.Qt.Key_H and self.toolBox.isVisible():
+            self.toolBox.hide()
+        elif event.key() == QtCore.Qt.Key_H and not self.toolBox.isVisible():
+            self.toolBox.setVisible(True)

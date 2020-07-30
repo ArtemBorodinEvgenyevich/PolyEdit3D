@@ -10,7 +10,7 @@ class PlyMainWindow(QtWidgets.QMainWindow):
         self.w_sceneSettings = None
         self.w_sceneViewport = PlyViewportWidget()
 
-        self.setContentsMargins(10, 10, 10, 10)
+        self.setContentsMargins(5, 5, 5, 5)
 
         self.__initUI()
 
