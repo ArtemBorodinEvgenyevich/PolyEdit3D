@@ -1,7 +1,6 @@
-glfw==1.10.1
 numpy==1.18.0
-pyassimp==4.1.4
-PyGLM==1.1.8
+#pyassimp==4.1.4
+#PyGLM==1.1.8
 PyOpenGL==3.1.4
 PyOpenGL-accelerate==3.1.4
 PySide2>=5.13.1
