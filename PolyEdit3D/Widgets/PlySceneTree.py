@@ -2,6 +2,7 @@ from PySide2 import QtWidgets, QtCore, QtGui
 
 
 class PlySceneTreeWidget(QtWidgets.QListWidget):
+    """Scene object hierarchy list."""
     def __init__(self):
         super(PlySceneTreeWidget, self).__init__()
         self.addItem("Item 1")

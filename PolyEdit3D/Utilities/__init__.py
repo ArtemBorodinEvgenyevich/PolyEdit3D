@@ -1,0 +1,1 @@
+from PolyEdit3D.Utilities.Path import AppPaths
