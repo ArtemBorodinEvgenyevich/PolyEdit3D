@@ -13,10 +13,10 @@ class Grid:
 
         self.vertices = np.array(
             [
-                0.5, 0.5, 0.0,
-                0.5, -0.5, 0.0,
+                 0.5,  0.5, 0.0,
+                 0.5, -0.5, 0.0,
                 -0.5, -0.5, 0.0,
-                -0.5, 0.5, 0.0
+                -0.5,  0.5, 0.0
             ], dtype=ctypes.c_float
         )
 
@@ -46,8 +46,6 @@ class Grid:
 
         self.shaderProg = compileProgram(vertex, fragment)
 
-        gl.glUseProgram(self.shaderProg)
-
     def setupBuffers(self):
         """Setup and bind basic buffers."""
         self.parent.accessViewportGLContext()
@@ -64,8 +62,8 @@ class Grid:
         gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self.EBO)
         gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, self.indices.nbytes, self.indices, gl.GL_STATIC_DRAW)
 
-        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
         gl.glEnableVertexAttribArray(0)
+        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
 
         # Unbind buffers except EBO (must be bind)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)

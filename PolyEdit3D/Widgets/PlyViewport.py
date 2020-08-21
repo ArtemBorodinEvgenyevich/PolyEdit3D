@@ -1,11 +1,13 @@
 from PolyEdit3D.Utilities import AppPaths
 from PolyEdit3D.Widgets import PlyViewportToolPanel
 from PolyEdit3D.Widgets import PlyBtnSetWireView
+from PolyEdit3D.GL.Entities import Grid
 
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileShader, compileProgram
 from PySide2 import QtWidgets, QtCore, QtGui
 
+import glm
 import ctypes
 import numpy as np
 
@@ -29,8 +31,15 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.btnWire.geoModeStateChanged.connect(self.onGeoModeChanged)
         self.toolPanel.addButton(self.btnWire, hasSpacer=True)
 
-        self.__initUI()
+        # --- Setup scene entities ---
 
+        # --- Setup Model View Projection matrices
+        self.m_model = glm.rotate(glm.mat4(1.0), glm.radians(-55.0), glm.vec3(1.0, 0.0, 0.0))
+        self.m_view = glm.translate(glm.mat4(1.0), glm.vec3(0.0, 0.0, -3.0))
+        self.m_projection = glm.perspective(glm.radians(45.0), 800 / 600, 0.1, 100.0)
+
+
+        self.__initUI()
 
         # TODO: create new buffer for individual object
         # TODO: Or use batch rendering
@@ -38,6 +47,10 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.vbo = None
         self.ebo = None
         self.shaderProg = None
+
+    def accessViewportGLContext(self):
+        """Simple alias for `::makeCurrent()` to improve readability."""
+        self.makeCurrent()
 
     def __initUI(self):
         """Setup user interface inside the viewport."""
@@ -50,7 +63,7 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
     def onGeoModeChanged(self, isWireframe: bool):
         """Action to perform on 'Wireframe' button click.
         Change viewport' s polygone mode fill."""
-        self.accessViewportOpenGLContext()
+        self.accessViewportGLContext()
 
         if isWireframe:
             gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
@@ -60,13 +73,10 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
         self.update()
 
-    def accessViewportOpenGLContext(self):
-        """Simple alias for `::makeCurrent()` to improve readability."""
-        self.makeCurrent()
-
     def initializeGL(self):
+        gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glClearColor(0.4, 0.4, 0.4, 1)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT)
 
         with open(AppPaths.SHADER_ENTITY_BASIC_FRAGMENT.value, 'r') as f:
             fragment = compileShader(f.read(), gl.GL_FRAGMENT_SHADER)
@@ -107,16 +117,24 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
         gl.glBindVertexArray(0)
 
-        gl.glUseProgram(self.shaderProg)
-
     def paintGL(self):
         gl.glClearColor(0.4, 0.4, 0.4, 1.0)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+
+        gl.glUseProgram(self.shaderProg)
+
+        # Apply MVP transformation
+        model_loc = gl.glGetUniformLocation(self.shaderProg, "model")
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_model))
+        view_loc = gl.glGetUniformLocation(self.shaderProg, "view")
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_view))
+        projection_loc = gl.glGetUniformLocation(self.shaderProg, "projection")
+        gl.glUniformMatrix4fv(projection_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_projection))
 
         gl.glBindVertexArray(self.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, ctypes.c_void_p(0))
 
-    def resizeGL(self, w:int, h:int):
+    def resizeGL(self, w: int, h: int):
         gl.glViewport(0, 0, w, h)
 
     def eventFilter(self, watched:QtCore.QObject, event:QtCore.QEvent) -> bool:
