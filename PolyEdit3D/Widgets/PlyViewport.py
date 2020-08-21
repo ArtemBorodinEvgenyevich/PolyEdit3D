@@ -34,10 +34,12 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         # --- Setup scene entities ---
 
         # --- Setup Model View Projection matrices
-        self.m_model = glm.rotate(glm.mat4(1.0), glm.radians(-55.0), glm.vec3(1.0, 0.0, 0.0))
-        self.m_view = glm.translate(glm.mat4(1.0), glm.vec3(0.0, 0.0, -3.0))
-        self.m_projection = glm.perspective(glm.radians(45.0), 800 / 600, 0.1, 100.0)
+        self.m_modelMatrix = glm.rotate(glm.mat4(1.0), glm.radians(0), glm.vec3(1.0, 0.0, 0.0))
+        self.m_viewMatrix = glm.translate(glm.mat4(1.0), glm.vec3(0.0, 0.0, -3.0))
+        self.m_projectionMatrix = glm.perspective(glm.radians(45.0), 800 / 600, 0.1, 100.0)
 
+        self.v_mousePosition = glm.vec2()
+        self.m_viewRotation = glm.quat()
 
         self.__initUI()
 
@@ -123,13 +125,15 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
 
         gl.glUseProgram(self.shaderProg)
 
+        #self.m_viewMatrix = glm.rotate(s)
+
         # Apply MVP transformation
         model_loc = gl.glGetUniformLocation(self.shaderProg, "model")
-        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_model))
+        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_modelMatrix))
         view_loc = gl.glGetUniformLocation(self.shaderProg, "view")
-        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_view))
+        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_viewMatrix))
         projection_loc = gl.glGetUniformLocation(self.shaderProg, "projection")
-        gl.glUniformMatrix4fv(projection_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_projection))
+        gl.glUniformMatrix4fv(projection_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_projectionMatrix))
 
         gl.glBindVertexArray(self.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, ctypes.c_void_p(0))
@@ -140,10 +144,28 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
     def eventFilter(self, watched:QtCore.QObject, event:QtCore.QEvent) -> bool:
         if event.type() == QtCore.QEvent.HoverEnter:
             self.setFocus()
-        elif event.type() == QtCore.QEvent.HoverLeave:
+        elif event.type() == QtCore.QEvent:
             self.clearFocus()
             
         return super(PlyViewportWidget, self).eventFilter(watched, event)
+
+    def mousePressEvent(self, event:QtGui.QMouseEvent):
+        if event.buttons() == QtCore.Qt.LeftButton:
+            self.v_mousePosition = glm.vec2(event.localPos().x(), event.localPos().y())
+        event.accept()
+
+    def mouseMoveEvent(self, event:QtGui.QMouseEvent):
+        if event.buttons() == QtCore.Qt.LeftButton:
+            pos_diff = glm.vec2(event.localPos().x(), event.localPos().y()) - self.v_mousePosition
+            self.v_mousePosition = glm.vec2(event.localPos().x(), event.localPos().y())
+
+            # Calculate viewport rotation axis and angle
+            rot_angle = glm.length(pos_diff) / 2.0
+            rot_axis = glm.vec3(pos_diff, 0.0)
+            self.m_viewMatrix = glm.rotate(self.m_viewMatrix, glm.radians(rot_angle), rot_axis)
+            self.update()
+
+        event.accept()
 
     def keyPressEvent(self, event:QtGui.QKeyEvent):
         event.accept()
