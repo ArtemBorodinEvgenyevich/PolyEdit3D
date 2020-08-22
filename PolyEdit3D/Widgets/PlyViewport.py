@@ -14,6 +14,7 @@ import numpy as np
 
 class PlyViewportWidget(QtWidgets.QOpenGLWidget):
     """Main 3D scene viewer."""
+
     def __init__(self):
         super(PlyViewportWidget, self).__init__(parent=None)
 
@@ -32,14 +33,13 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.toolPanel.addButton(self.btnWire, hasSpacer=True)
 
         # --- Setup scene entities ---
+        #     ...
 
         # --- Setup Model View Projection matrices
-        self.m_modelMatrix = glm.rotate(glm.mat4(1.0), glm.radians(0), glm.vec3(1.0, 0.0, 0.0))
-        self.m_viewMatrix = glm.translate(glm.mat4(1.0), glm.vec3(0.0, 0.0, -3.0))
-        self.m_projectionMatrix = glm.perspective(glm.radians(45.0), 800 / 600, 0.1, 100.0)
+        self.m_projectionMatrix = QtGui.QMatrix4x4()
 
-        self.v_mousePosition = glm.vec2()
-        self.m_viewRotation = glm.quat()
+        self.m_mousePos = QtGui.QVector2D()
+        self.m_viewRotation = QtGui.QQuaternion()
 
         self.__initUI()
 
@@ -123,50 +123,47 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.4, 0.4, 0.4, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
+        modelViewMatrix = QtGui.QMatrix4x4()
+        modelViewMatrix.setToIdentity()
+        modelViewMatrix.translate(0.0, 0.0, -3.0)
+        modelViewMatrix.rotate(self.m_viewRotation)
+
         gl.glUseProgram(self.shaderProg)
 
-        #self.m_viewMatrix = glm.rotate(s)
-
-        # Apply MVP transformation
-        model_loc = gl.glGetUniformLocation(self.shaderProg, "model")
-        gl.glUniformMatrix4fv(model_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_modelMatrix))
-        view_loc = gl.glGetUniformLocation(self.shaderProg, "view")
-        gl.glUniformMatrix4fv(view_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_viewMatrix))
-        projection_loc = gl.glGetUniformLocation(self.shaderProg, "projection")
-        gl.glUniformMatrix4fv(projection_loc, 1, gl.GL_FALSE, glm.value_ptr(self.m_projectionMatrix))
+        mvp_loc = gl.glGetUniformLocation(self.shaderProg, "mvp")
+        mvp = self.m_projectionMatrix * modelViewMatrix
+        gl.glUniformMatrix4fv(mvp_loc, 1, gl.GL_FALSE, mvp.data())
 
         gl.glBindVertexArray(self.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, ctypes.c_void_p(0))
 
     def resizeGL(self, w: int, h: int):
-        gl.glViewport(0, 0, w, h)
+        aspect = w / h
+        self.m_projectionMatrix.setToIdentity()
+        self.m_projectionMatrix.perspective(45, aspect, 0.1, 10.0)
 
-    def eventFilter(self, watched:QtCore.QObject, event:QtCore.QEvent) -> bool:
+    def eventFilter(self, watched: QtCore.QObject, event: QtCore.QEvent) -> bool:
         if event.type() == QtCore.QEvent.HoverEnter:
             self.setFocus()
         elif event.type() == QtCore.QEvent:
             self.clearFocus()
-            
+
         return super(PlyViewportWidget, self).eventFilter(watched, event)
 
-    def mousePressEvent(self, event:QtGui.QMouseEvent):
+    def mousePressEvent(self, event: QtGui.QMouseEvent):
         if event.buttons() == QtCore.Qt.LeftButton:
-            self.v_mousePosition = glm.vec2(event.localPos().x(), event.localPos().y())
+            self.m_mousePos = QtGui.QVector2D(event.localPos())
+
+    def mouseMoveEvent(self, event: QtGui.QMouseEvent):
+        if event.buttons() != QtCore.Qt.LeftButton:
+            event.ignore()
+
+        diff = QtGui.QVector2D(event.localPos()) - self.m_mousePos
+        self.m_mousePos = QtGui.QVector2D(event.localPos())
+
+        angle = diff.length() / 2.0
+        axis = QtGui.QVector3D(diff.y(), diff.x(), 0.0)
+        self.m_viewRotation = QtGui.QQuaternion.fromAxisAndAngle(axis, angle) * self.m_viewRotation
+
+        self.update()
         event.accept()
-
-    def mouseMoveEvent(self, event:QtGui.QMouseEvent):
-        if event.buttons() == QtCore.Qt.LeftButton:
-            pos_diff = glm.vec2(event.localPos().x(), event.localPos().y()) - self.v_mousePosition
-            self.v_mousePosition = glm.vec2(event.localPos().x(), event.localPos().y())
-
-            # Calculate viewport rotation axis and angle
-            rot_angle = glm.length(pos_diff) / 2.0
-            rot_axis = glm.vec3(pos_diff, 0.0)
-            self.m_viewMatrix = glm.rotate(self.m_viewMatrix, glm.radians(rot_angle), rot_axis)
-            self.update()
-
-        event.accept()
-
-    def keyPressEvent(self, event:QtGui.QKeyEvent):
-        event.accept()
-
