@@ -138,7 +138,7 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         modelMatrix.scale(1000)
 
         self.m_viewMatrix.setToIdentity()
-        self.m_viewMatrix.translate(0.0, 0.0, -5.0)
+        self.m_viewMatrix.translate(0.0, 0.0, -10.0)
         self.m_viewMatrix.rotate(15, QtGui.QVector3D(1.0, 0.0, 0.0))
         self.m_viewMatrix.rotate(self.m_viewRotation)
 

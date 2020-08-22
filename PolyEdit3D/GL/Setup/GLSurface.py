@@ -11,6 +11,7 @@ class GLSurfaceFormat(QtGui.QSurfaceFormat):
         self.setProfile(QtGui.QSurfaceFormat.CoreProfile)
         self.setColorSpace(QtGui.QSurfaceFormat.sRGBColorSpace)
         self.setSwapBehavior(QtGui.QSurfaceFormat.DoubleBuffer)
+        self.setSamples(4)
 
     def printSurfaceInfo(self):
         """Get renderer info."""
