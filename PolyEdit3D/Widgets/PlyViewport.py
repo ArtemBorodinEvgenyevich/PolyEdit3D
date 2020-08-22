@@ -35,8 +35,9 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         # --- Setup scene entities ---
         #     ...
 
-        # --- Setup Model View Projection matrices
+        # --- Setup View Projection matrices
         self.m_projectionMatrix = QtGui.QMatrix4x4()
+        self.m_viewMatrix = QtGui.QMatrix4x4()
 
         self.m_mousePos = QtGui.QVector2D()
         self.m_viewRotation = QtGui.QQuaternion()
@@ -123,16 +124,26 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         gl.glClearColor(0.4, 0.4, 0.4, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-        modelViewMatrix = QtGui.QMatrix4x4()
-        modelViewMatrix.setToIdentity()
-        modelViewMatrix.translate(0.0, 0.0, -3.0)
-        modelViewMatrix.rotate(self.m_viewRotation)
+        # TODO: Put model matrix into model entity
+        # This is a *grid* model matrix
+        modelMatrix = QtGui.QMatrix4x4()
+        modelMatrix.setToIdentity()
+        modelMatrix.rotate(90.0, QtGui.QVector3D(1.0, 0.0, 0.0))
+
+        self.m_viewMatrix.setToIdentity()
+        self.m_viewMatrix.translate(0.0, 0.0, -3.0)
+        self.m_viewMatrix.rotate(self.m_viewRotation)
 
         gl.glUseProgram(self.shaderProg)
 
-        mvp_loc = gl.glGetUniformLocation(self.shaderProg, "mvp")
-        mvp = self.m_projectionMatrix * modelViewMatrix
-        gl.glUniformMatrix4fv(mvp_loc, 1, gl.GL_FALSE, mvp.data())
+        u_projection_loc = gl.glGetUniformLocation(self.shaderProg, "u_projectionMatrix")
+        gl.glUniformMatrix4fv(u_projection_loc, 1, gl.GL_FALSE, self.m_projectionMatrix.data())
+
+        u_view_loc = gl.glGetUniformLocation(self.shaderProg, "u_viewMatrix")
+        gl.glUniformMatrix4fv(u_view_loc, 1, gl.GL_FALSE, self.m_viewMatrix.data())
+
+        u_model_loc = gl.glGetUniformLocation(self.shaderProg, "u_modelMatrix")
+        gl.glUniformMatrix4fv(u_model_loc, 1, gl.GL_FALSE, modelMatrix.data())
 
         gl.glBindVertexArray(self.vao)
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, ctypes.c_void_p(0))
