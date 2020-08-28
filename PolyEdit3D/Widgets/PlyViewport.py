@@ -1,6 +1,7 @@
 from PolyEdit3D.Utilities import AppPaths
 from PolyEdit3D.Widgets import PlyViewportToolPanel
 from PolyEdit3D.Widgets import PlyBtnSetWireView
+from PolyEdit3D.GL.Structs.Vertex import VertexData, IndexArray, VertexArray
 
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileShader, compileProgram
@@ -60,25 +61,8 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
 
         self.layout().addWidget(self.toolPanel)
 
-    @QtCore.Slot(bool)
-    def onGeoModeChanged(self, isWireframe: bool):
-        """Action to perform on 'Wireframe' button click.
-        Change viewport' s polygone mode fill."""
-        self.accessViewportGLContext()
-
-        if isWireframe:
-            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-            self.update()
-            return
-
-        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-        self.update()
-
     def initializeGL(self):
         gl.glEnable(gl.GL_DEPTH_TEST)
-
-        #gl.glEnable(gl.GL_CULL_FACE)
-        #gl.glCullFace(gl.GL_BACK)
 
         gl.glClearColor(0.4, 0.4, 0.4, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT)
@@ -187,3 +171,17 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
 
             self.update()
         event.accept()
+
+    @QtCore.Slot(bool)
+    def onGeoModeChanged(self, isWireframe: bool):
+        """Action to perform on 'Wireframe' button click.
+        Change viewport' s polygone mode fill."""
+        self.accessViewportGLContext()
+
+        if isWireframe:
+            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
+            self.update()
+            return
+
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+        self.update()
