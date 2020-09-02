@@ -1,7 +1,8 @@
 from PolyEdit3D.Utilities import AppPaths
 from PolyEdit3D.Widgets import PlyViewportToolPanel
 from PolyEdit3D.Widgets import PlyBtnSetWireView
-from PolyEdit3D.GL.Structs.Vertex import VertexData, IndexArray, VertexArray
+from PolyEdit3D.GL.Structs.IndexBuffer import IndexBuffer
+from PolyEdit3D.GL.Structs.VertexBuffer import VertexBuffer
 
 from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileShader, compileProgram
@@ -90,16 +91,10 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         )
 
         self.vao = gl.glGenVertexArrays(1)
-        self.vbo = gl.glGenBuffers(1)
-        self.ebo = gl.glGenBuffers(1)
-
         gl.glBindVertexArray(self.vao)
 
-        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo)
-        gl.glBufferData(gl.GL_ARRAY_BUFFER, vertices.nbytes, vertices, gl.GL_STATIC_DRAW)
-
-        gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self.ebo)
-        gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, indices.nbytes, indices, gl.GL_STATIC_DRAW)
+        self.vbo = VertexBuffer(vertices, vertices.nbytes)
+        self.ebo = IndexBuffer(indices, indices.nbytes)
 
         # Position attribute
         gl.glEnableVertexAttribArray(0)
