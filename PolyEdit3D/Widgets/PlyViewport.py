@@ -1,11 +1,10 @@
 from PolyEdit3D.Utilities import AppPaths
 from PolyEdit3D.Widgets import PlyViewportToolPanel
 from PolyEdit3D.Widgets import PlyBtnSetWireView
-from PolyEdit3D.GL.Structs.IndexBuffer import IndexBuffer
-from PolyEdit3D.GL.Structs.VertexBuffer import VertexBuffer
+from PolyEdit3D.GL.Renderer import VertexBuffer, IndexBuffer, VertexBufferLayout, VertexArray, Shader
+
 
 from OpenGL import GL as gl
-from OpenGL.GL.shaders import compileShader, compileProgram
 from PySide2 import QtWidgets, QtCore, QtGui
 
 import ctypes
@@ -32,9 +31,6 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.btnWire.geoModeStateChanged.connect(self.onGeoModeChanged)
         self.toolPanel.addButton(self.btnWire, hasSpacer=True)
 
-        # --- Setup scene entities ---
-        #     ...
-
         # --- Setup View Projection matrices
         self.m_projectionMatrix = QtGui.QMatrix4x4()
         self.m_viewMatrix = QtGui.QMatrix4x4()
@@ -43,17 +39,6 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.m_viewRotation = QtGui.QQuaternion()
 
         self.__initUI()
-
-        # TODO: create new buffer for individual object
-        # TODO: Or use batch rendering
-        self.vao = None
-        self.vbo = None
-        self.ebo = None
-        self.shaderProg = None
-
-    def accessViewportGLContext(self):
-        """Simple alias for `::makeCurrent()` to improve readability."""
-        self.makeCurrent()
 
     def __initUI(self):
         """Setup user interface inside the viewport."""
@@ -67,12 +52,6 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
 
         gl.glClearColor(0.4, 0.4, 0.4, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT)
-
-        with open(AppPaths.SHADER_ENTITY_BASIC_FRAGMENT.value, 'r') as f:
-            fragment = compileShader(f.read(), gl.GL_FRAGMENT_SHADER)
-        with open(AppPaths.SHADER_ENTITY_BASIC_VERTEX.value, "r") as f:
-            vertex = compileShader(f.read(), gl.GL_VERTEX_SHADER)
-        self.shaderProg = compileProgram(vertex, fragment)
 
         vertices = np.array(
             [
@@ -90,20 +69,20 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
             ], dtype=ctypes.c_uint
         )
 
-        self.vao = gl.glGenVertexArrays(1)
-        gl.glBindVertexArray(self.vao)
+        self.shaderProg = Shader(AppPaths.SHADER_ENTITY_BASIC_VERTEX.value, AppPaths.SHADER_ENTITY_BASIC_FRAGMENT.value)
+        self.vao = VertexArray()
 
-        self.vbo = VertexBuffer(vertices, vertices.nbytes)
-        self.ebo = IndexBuffer(indices, indices.nbytes)
+        self.vbo = VertexBuffer(vertices, vertices.nbytes, gl.GL_STATIC_DRAW)
+        layout = VertexBufferLayout()
+        layout.pushFloat(3)
+        layout.pushFloat(2)
+        self.vao.addBuffer(self.vbo, layout)
+        self.ebo = IndexBuffer(indices, indices.nbytes, gl.GL_STATIC_DRAW)
 
-        # Position attribute
-        gl.glEnableVertexAttribArray(0)
-        gl.glVertexAttribPointer(0, 3, gl.GL_FLOAT, gl.GL_FALSE, 5 * ctypes.sizeof(ctypes.c_float), ctypes.c_void_p(0))
+        self.vbo.unbind()
+        self.ebo.unbind()
+        self.vao.unbind()
 
-        # Texture coordinates attribute
-        gl.glEnableVertexAttribArray(1)
-        gl.glVertexAttribPointer(1, 2, gl.GL_FLOAT, gl.GL_FALSE, 5 * ctypes.sizeof(ctypes.c_float),
-                                 ctypes.c_void_p(3 * ctypes.sizeof(ctypes.c_float)))
 
     def paintGL(self):
         gl.glClearColor(0.4, 0.4, 0.4, 1.0)
@@ -121,21 +100,14 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.m_viewMatrix.rotate(15, QtGui.QVector3D(1.0, 0.0, 0.0))
         self.m_viewMatrix.rotate(self.m_viewRotation)
 
-        gl.glUseProgram(self.shaderProg)
+        self.shaderProg.bind()
 
-        u_projection_loc = gl.glGetUniformLocation(self.shaderProg, "u_projectionMatrix")
-        gl.glUniformMatrix4fv(u_projection_loc, 1, gl.GL_FALSE, self.m_projectionMatrix.data())
+        self.shaderProg.setUniformMatrix4fv("u_projectionMatrix", self.m_projectionMatrix.data())
+        self.shaderProg.setUniformMatrix4fv("u_viewMatrix", self.m_viewMatrix.data())
+        self.shaderProg.setUniformMatrix4fv("u_modelMatrix", modelMatrix.data())
 
-        u_view_loc = gl.glGetUniformLocation(self.shaderProg, "u_viewMatrix")
-        gl.glUniformMatrix4fv(u_view_loc, 1, gl.GL_FALSE, self.m_viewMatrix.data())
-
-        u_model_loc = gl.glGetUniformLocation(self.shaderProg, "u_modelMatrix")
-        gl.glUniformMatrix4fv(u_model_loc, 1, gl.GL_FALSE, modelMatrix.data())
-
-        #u_view_res_loc = gl.glGetUniformLocation(self.shaderProg, "u_viewportResolution")
-        #gl.glUniform2fv(u_view_res_loc, 1, self.size().toTuple())
-
-        gl.glBindVertexArray(self.vao)
+        self.vao.bind()
+        self.ebo.bind()
         gl.glDrawElements(gl.GL_TRIANGLES, 6, gl.GL_UNSIGNED_INT, ctypes.c_void_p(0))
 
     def resizeGL(self, w: int, h: int):
@@ -167,13 +139,14 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
             self.update()
         event.accept()
 
+    # TODO: Draw wireframe as a texture
     @QtCore.Slot(bool)
-    def onGeoModeChanged(self, isWireframe: bool):
+    def onGeoModeChanged(self, is_wireframe: bool):
         """Action to perform on 'Wireframe' button click.
         Change viewport' s polygone mode fill."""
-        self.accessViewportGLContext()
+        self.makeCurrent()
 
-        if isWireframe:
+        if is_wireframe:
             gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
             self.update()
             return

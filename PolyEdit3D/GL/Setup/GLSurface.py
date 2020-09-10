@@ -9,6 +9,8 @@ class GLSurfaceFormat(QtGui.QSurfaceFormat):
         self.setMinorVersion(3)
         self.setMajorVersion(4)
         self.setProfile(QtGui.QSurfaceFormat.CoreProfile)
+        # FIXME: Check for debug flag!
+        self.setOption(QtGui.QSurfaceFormat.DebugContext)
         self.setColorSpace(QtGui.QSurfaceFormat.sRGBColorSpace)
         self.setSwapBehavior(QtGui.QSurfaceFormat.DoubleBuffer)
         self.setSamples(4)
