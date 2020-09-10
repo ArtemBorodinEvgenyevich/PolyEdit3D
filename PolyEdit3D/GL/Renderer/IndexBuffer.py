@@ -3,11 +3,11 @@ from OpenGL import GL as gl
 
 class IndexBuffer:
     def __init__(self, data, size, draw_state=gl.GL_STATIC_DRAW):
-        self.__rendererID = None
+        self.__rendererID = gl.glGenBuffers(1)
+        self.__index_count = len(data)
         self.__initBuffer(size, data, draw_state)
 
     def __initBuffer(self, size, data, draw_state):
-        self.__rendererID = gl.glGenBuffers(1)
         gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self.__rendererID)
         gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, size, data, draw_state)
 
@@ -16,3 +16,8 @@ class IndexBuffer:
 
     def unbind(self):
         gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, 0)
+
+    # FIXME
+    @property
+    def index_count(self):
+        return self.__index_count
