@@ -2,7 +2,7 @@ from OpenGL import GL as gl
 from OpenGL.GL.shaders import compileShader, compileProgram
 
 
-class Shader:
+class PlyShader:
     def __init__(self, *filepaths: str):
         self.__mRendererID = self.__compile(filepaths)
 

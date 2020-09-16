@@ -1,15 +1,15 @@
 from OpenGL import GL as gl
-from .VertexBuffer import VertexBuffer
-from .VeretxBufferLayout import VertexBufferLayout
+from .PlyVertexBuffer import PlyVertexBuffer
+from .PlyVertexBufferLayout import PlyVertexBufferLayout
 import ctypes
 
 
-class VertexArray:
+class PlyVertexArray:
     def __init__(self):
         self.__mRendererId = gl.glGenVertexArrays(1)
         self.bind()
 
-    def addBuffer(self, vb: VertexBuffer, layout: VertexBufferLayout):
+    def addBuffer(self, vb: PlyVertexBuffer, layout: PlyVertexBufferLayout):
         self.bind()
 
         vb.bind()

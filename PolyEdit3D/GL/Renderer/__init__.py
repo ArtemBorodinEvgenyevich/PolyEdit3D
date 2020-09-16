@@ -1,6 +1,7 @@
-from PolyEdit3D.GL.Renderer.Shader import Shader
-from PolyEdit3D.GL.Renderer.VertexArray import VertexArray
-from PolyEdit3D.GL.Renderer.VertexBuffer import VertexBuffer
-from PolyEdit3D.GL.Renderer.VeretxBufferLayout import VertexBufferLayout, VertexAttributeElement
-from PolyEdit3D.GL.Renderer.IndexBuffer import IndexBuffer
-from PolyEdit3D.GL.Renderer.Renderer import Renderer
+from PolyEdit3D.GL.Renderer.PlyShader import PlyShader
+from PolyEdit3D.GL.Renderer.PlyVertexArray import PlyVertexArray
+from PolyEdit3D.GL.Renderer.PlyVertexBuffer import PlyVertexBuffer
+from PolyEdit3D.GL.Renderer.PlyVertexBufferLayout import PlyVertexBufferLayout, VertexAttributeElement
+from PolyEdit3D.GL.Renderer.PlyIndexBuffer import PlyIndexBuffer
+from PolyEdit3D.GL.Renderer.PlyRenderer import PlyRenderer
+from PolyEdit3D.GL.Renderer.PlyViewportCamera import PlyViewportCamera

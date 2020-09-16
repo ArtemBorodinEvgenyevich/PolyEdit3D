@@ -35,7 +35,7 @@ class VertexAttributeElement:
         return gl_type_size[gl_type]
 
 
-class VertexBufferLayout:
+class PlyVertexBufferLayout:
     def __init__(self):
         self.__mElements = []
         self.__mElementsCount = 0

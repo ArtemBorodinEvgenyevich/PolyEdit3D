@@ -2,7 +2,7 @@ from OpenGL import GL as gl
 import ctypes
 
 
-class VertexBuffer:
+class PlyVertexBuffer:
     def __init__(self, data, count, draw_state=gl.GL_STATIC_DRAW):
         self.__m_RendererID = gl.glGenBuffers(1)
         self.__count = count

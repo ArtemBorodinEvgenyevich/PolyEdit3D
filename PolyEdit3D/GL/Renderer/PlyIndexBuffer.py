@@ -1,7 +1,7 @@
 from OpenGL import GL as gl
 
 
-class IndexBuffer:
+class PlyIndexBuffer:
     def __init__(self, data, size, draw_state=gl.GL_STATIC_DRAW):
         self.__rendererID = gl.glGenBuffers(1)
         self.__index_count = len(data)
