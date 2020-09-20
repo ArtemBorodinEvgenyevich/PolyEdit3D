@@ -117,6 +117,7 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
     def mouseMoveEvent(self, event: QtGui.QMouseEvent):
         if event.buttons() == QtCore.Qt.LeftButton:
             self.camera.rotate(self.m_mousePos, QtGui.QVector2D(event.localPos()))
+            self.m_mousePos = QtGui.QVector2D(event.localPos())
         self.update()
 
     def wheelEvent(self, event:QtGui.QWheelEvent):

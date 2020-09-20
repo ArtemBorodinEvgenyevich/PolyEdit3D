@@ -23,5 +23,8 @@ void main()
     float distance = length(f_TexCoord.xy - vec2(0.5, 0.5));
     gridColor *= mix(vec4(0.75, 0.75, 0.75, 1.0), vec4(0.25,0.25,0.25,1.), distance);
 
+
+    //gridColor = vec4(1.0, 0.0, 0.0, 1.0);
+
     fragColor = gridColor;
 }

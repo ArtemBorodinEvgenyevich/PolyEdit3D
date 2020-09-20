@@ -3,23 +3,40 @@ from PySide2.QtGui import QQuaternion, QVector2D, QVector3D, QMatrix4x4
 
 class PlyViewportCamera:
     def __init__(self):
-
         self.__projectionMatrix = QMatrix4x4()
         self.__viewMatrix = QMatrix4x4()
-        self.__viewRotation = QQuaternion()
 
         self.__viewZoom = -10.0
         self.__clipRange = (0.1, 1000.0)
         self.__fov = 45
 
+        self.__viewRotation = QQuaternion()
+        self.__xRotation = QQuaternion()
+        self.__yRotation = QQuaternion()
+
+    def __rotateX(self, rotation: QQuaternion):
+        self.__xRotation = rotation * self.__xRotation
+        self.__viewRotation = self.__xRotation * self.__yRotation
+        self.__viewRotation.normalize()
+
+    def __rotateY(self, rotation: QQuaternion):
+        self.__yRotation = rotation * self.__yRotation
+        self.__viewRotation = self.__xRotation * self.__yRotation
+        self.__viewRotation.normalize()
+
     def rotate(self, p_start: QVector2D, p_end: QVector2D):
+        prev_rotation = self.__viewRotation
+        div_factor = 10
         diff = p_end - p_start
-        angle = diff.length() / 20
-        axis = QVector3D(diff.y(), diff.x(), 0.0)
-        self.__viewRotation = QQuaternion.fromAxisAndAngle(axis, angle) * self.__viewRotation
+        angle_x = diff.y() / div_factor
+        angle_y = diff.x() / div_factor
+        self.__rotateX(QQuaternion.fromAxisAndAngle(1.0, 0.0, 0.0, angle_x))
+        self.__rotateY(QQuaternion.fromAxisAndAngle(0.0, 1.0, 0.0, angle_y))
+        self.__viewRotation = QQuaternion.slerp(prev_rotation, self.__viewRotation, 0.6)
+        self.__viewRotation.normalize()
 
     def zoom(self, delta: float):
-        if delta > 0:
+        if delta > 0 and self.__viewZoom != -1.0:
             self.__viewZoom += 0.5
         elif delta < 0:
             self.__viewZoom -= 0.5
