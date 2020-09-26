@@ -10,6 +10,10 @@ class PlyViewportCamera:
         self.__clipRange = (0.1, 1000.0)
         self.__fov = 45
 
+        self.__camEye = QVector3D(0.0, 5.0, -10.0)
+        self.__camTarget = QVector3D(0.0, 0.0, 0.0)
+        self.__camUp = QVector3D(0.0, 1.0, 0.0)
+
         self.__viewRotation = QQuaternion()
         self.__xRotation = QQuaternion()
         self.__yRotation = QQuaternion()
@@ -24,6 +28,10 @@ class PlyViewportCamera:
         self.__viewRotation = self.__xRotation * self.__yRotation
         self.__viewRotation.normalize()
 
+    def __setToStartPos(self):
+        self.__viewMatrix.setToIdentity()
+        self.__viewMatrix.lookAt(self.__camEye, self.__camTarget, self.__camUp)
+
     def rotate(self, p_start: QVector2D, p_end: QVector2D):
         prev_rotation = self.__viewRotation
         div_factor = 10
@@ -35,6 +43,13 @@ class PlyViewportCamera:
         self.__viewRotation = QQuaternion.slerp(prev_rotation, self.__viewRotation, 0.6)
         self.__viewRotation.normalize()
 
+    def pan(self, start: QVector2D, end:QVector2D):
+        delta = end - start
+        transform = QVector3D(delta.x() / 50, delta.y() / 50, 0.0)
+        self.__camEye += transform
+        self.__camTarget += transform
+
+    # FIXME!!!
     def zoom(self, delta: float):
         if delta > 0 and self.__viewZoom != -1.0:
             self.__viewZoom += 0.5
@@ -42,12 +57,10 @@ class PlyViewportCamera:
             self.__viewZoom -= 0.5
 
     def updateCamera(self):
-        self.__viewMatrix.setToIdentity()
-        self.__viewMatrix.translate(0.0, 0.0, self.__viewZoom)
-        self.__viewMatrix.rotate(15, QVector3D(1.0, 0.0, 0.0))
+        self.__setToStartPos()
         self.__viewMatrix.rotate(self.__viewRotation)
 
-    def setProjection(self, w: int = 1280, h: int = 720):
+    def setProjection(self, w: int, h: int):
         aspect_ratio = w / h
         self.__projectionMatrix.setToIdentity()
         self.__projectionMatrix.perspective(self.__fov, aspect_ratio, *self.__clipRange)
