@@ -111,18 +111,21 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         return super(PlyViewportWidget, self).eventFilter(watched, event)
 
     def mousePressEvent(self, event: QtGui.QMouseEvent):
-        if event.buttons() == QtCore.Qt.LeftButton:
-            self.m_mousePos = QtGui.QVector2D(event.localPos())
+        self.m_mousePos = QtGui.QVector2D(event.localPos())
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent):
         if event.buttons() == QtCore.Qt.LeftButton:
             self.camera.rotate(self.m_mousePos, QtGui.QVector2D(event.localPos()))
+            self.m_mousePos = QtGui.QVector2D(event.localPos())
+        if event.buttons() == QtCore.Qt.RightButton:
+            self.camera.pan(self.m_mousePos, QtGui.QVector2D(event.localPos()))
             self.m_mousePos = QtGui.QVector2D(event.localPos())
         self.update()
 
     def wheelEvent(self, event:QtGui.QWheelEvent):
         self.camera.zoom(event.delta())
         self.update()
+
 
     # TODO: Draw wireframe as a texture
     @QtCore.Slot(bool)
