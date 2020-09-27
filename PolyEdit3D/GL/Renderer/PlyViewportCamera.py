@@ -9,7 +9,7 @@ class PlyViewportCamera:
         self.__projectionMatrix = QMatrix4x4()
         self.__viewMatrix = QMatrix4x4()
 
-        self.__viewZoom = 0
+        self.__viewZoom = 1
         self.__clipRange = (0.1, 1000.0)
         self.__fov = 45
 
@@ -48,19 +48,20 @@ class PlyViewportCamera:
         self.__camEye += transform
         self.__camTarget += transform
 
-    # FIXME!!!
     def zoom(self, delta: float):
-        if delta > 0:
-            self.__viewZoom += 0.5
-        elif delta < 0:
-            self.__viewZoom -= 0.5
+        if delta < 0 and self.__viewZoom > 0.2:
+            self.__viewZoom -= 0.1
+        elif delta > 0 and self.__viewZoom < 9.9:
+            self.__viewZoom += 0.1
+            print(self.__viewZoom)
 
     def updateCamera(self):
         self.__viewMatrix.setToIdentity()
-        self.__viewMatrix.lookAt(self.__camEye, self.__camTarget, self.__camUp)
-        # FIXME!!
-        self.__viewMatrix.translate(QVector3D(0.0, self.__viewZoom, 0.0))
+        self.__viewMatrix.lookAt(self.__camEye,
+                                 self.__camTarget,
+                                 self.__camUp)
         self.__viewMatrix.rotate(self.__viewRotation)
+        self.__viewMatrix.scale(self.__viewZoom)
 
     def setProjection(self, w: int, h: int):
         aspect_ratio = w / h
