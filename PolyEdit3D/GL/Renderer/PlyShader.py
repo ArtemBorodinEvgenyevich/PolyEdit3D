@@ -28,6 +28,7 @@ class PlyShader:
             raise RuntimeWarning(f"Uniform {name} does not exist!")
         return location
 
+    # FIXME: Hardcode shader type checks
     def __compile(self, filepaths):
         for path in filepaths:
             with open(path, "r") as source:
