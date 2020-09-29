@@ -33,10 +33,18 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.camera = PlyViewportCamera()
 
         # TODO: move to object entity
-        self.vao = None
-        self.ebo = None
-        self.vbo = None
-        self.shaderProg = None
+        self.grid_vao = None
+        self.grid_ebo = None
+        self.grid_vbo = None
+        self.grid_shaderProg = None
+
+        self.dots_vao = None
+        self.dots_vbo = None
+        self.dots_shaderProg = None
+
+        self.lines_vao = None
+        self.lines_vbo = None
+        self.lines_shaderProg = None
 
         self.__initUI()
 
@@ -65,20 +73,78 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
             ], dtype=ctypes.c_uint
         )
 
-        self.shaderProg = PlyShader(AppPaths.SHADER_ENTITY_BASIC_VERTEX.value, AppPaths.SHADER_ENTITY_BASIC_FRAGMENT.value)
-        self.vao = PlyVertexArray()
+        dots = np.array(
+            [
+                0.0, 0.0, 0.0,      0.0, 1.0, 0.0,
+                0.0, 1.0, 0.0,      0.0, 1.0, 0.0,
+                0.0, 2.0, 0.0,      0.0, 1.0, 0.0,
+                0.0, 3.0, 0.0,      0.0, 1.0, 0.0,
 
-        self.vbo = PlyVertexBuffer(vertices, vertices.nbytes, gl.GL_STATIC_DRAW)
-        self.ebo = PlyIndexBuffer(indices, indices.nbytes, gl.GL_STATIC_DRAW)
+                0.0, 0.0, 0.0,      1.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,      1.0, 0.0, 0.0,
+                2.0, 0.0, 0.0,      1.0, 0.0, 0.0,
+                3.0, 0.0, 0.0,      1.0, 0.0, 0.0,
+
+                0.0, 0.0,  0.0,      0.0, 0.0, 1.0,
+                0.0, 0.0, -1.0,      0.0, 0.0, 1.0,
+                0.0, 0.0, -2.0,      0.0, 0.0, 1.0,
+                0.0, 0.0, -3.0,      0.0, 0.0, 1.0,
+            ], dtype=ctypes.c_float
+        )
+
+        lines = np.array(
+            [
+                0.0, 0.0, 0.0,      0.0, 1.0, 0.0,
+                0.0, 3.0, 0.0,      0.0, 1.0, 0.0,
+
+                0.0, 0.0, 0.0,      1.0, 0.0, 0.0,
+                3.0, 0.0, 0.0,      1.0, 0.0, 0.0,
+
+                0.0, 0.0, 0.0,      0.0, 0.0, 1.0,
+                0.0, 0.0, -3.0,     0.0, 0.0, 1.0,
+            ], dtype=ctypes.c_float
+        )
+
+        self.grid_shaderProg = PlyShader(AppPaths.SHADER_ENTITY_BASIC_VERTEX.value,
+                                         AppPaths.SHADER_ENTITY_BASIC_FRAGMENT.value)
+        self.grid_vao = PlyVertexArray()
+
+        self.grid_vbo = PlyVertexBuffer(vertices, vertices.nbytes, gl.GL_STATIC_DRAW)
+        self.grid_ebo = PlyIndexBuffer(indices, indices.nbytes, gl.GL_STATIC_DRAW)
 
         layout = PlyVertexBufferLayout()
         layout.pushFloat(3)
         layout.pushFloat(2)
-        self.vao.addBuffer(self.vbo, layout)
+        self.grid_vao.addBuffer(self.grid_vbo, layout)
 
-        self.vbo.unbind()
-        self.ebo.unbind()
-        self.vao.unbind()
+        self.grid_vbo.unbind()
+        self.grid_ebo.unbind()
+        self.grid_vao.unbind()
+
+        self.dots_shaderProg = PlyShader(AppPaths.SHADER_COORD_DOTS_VERTEX.value,
+                                         AppPaths.SHADER_COORD_DOTS_FRAGMENT.value)
+        self.dots_vao = PlyVertexArray()
+        self.dots_vbo = PlyVertexBuffer(dots, dots.nbytes, gl.GL_STATIC_DRAW)
+        layout = PlyVertexBufferLayout()
+        layout.pushFloat(3)
+        layout.pushFloat(3)
+        self.dots_vao.addBuffer(self.dots_vbo, layout)
+
+        self.dots_vbo.unbind()
+        self.dots_vao.unbind()
+
+        self.lines_shaderProg = PlyShader(AppPaths.SHADER_COORD_LINES_VERTEX.value,
+                                          AppPaths.SHADER_COORD_LINES_FRAGMENT.value)
+        self.lines_vao = PlyVertexArray()
+        self.lines_vbo = PlyVertexBuffer(lines, lines.nbytes, gl.GL_STATIC_DRAW)
+        layout = PlyVertexBufferLayout()
+        layout.pushFloat(3)
+        layout.pushFloat(3)
+        self.lines_vao.addBuffer(self.lines_vbo, layout)
+
+        self.lines_vbo.unbind()
+        self.lines_vao.unbind()
+
 
     def paintGL(self):
         self.renderer.init()
@@ -86,6 +152,7 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
 
         # TODO: Put model matrix into model entity
         # This is a *grid* model matrix
+        axis_modelMatrix = QtGui.QMatrix4x4()
         modelMatrix = QtGui.QMatrix4x4()
         modelMatrix.setToIdentity()
         modelMatrix.rotate(90, QtGui.QVector3D(1.0, 0.0, 0.0))
@@ -93,12 +160,27 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
 
         self.camera.updateCamera()
 
-        self.shaderProg.bind()
-        self.shaderProg.setUniformMatrix4fv("u_projectionMatrix", self.camera.projectionMatrix.data())
-        self.shaderProg.setUniformMatrix4fv("u_viewMatrix", self.camera.viewMatrix.data())
-        self.shaderProg.setUniformMatrix4fv("u_modelMatrix", modelMatrix.data())
+        self.grid_shaderProg.bind()
+        self.grid_shaderProg.setUniformMatrix4fv("u_projectionMatrix", self.camera.projectionMatrix.data())
+        self.grid_shaderProg.setUniformMatrix4fv("u_viewMatrix", self.camera.viewMatrix.data())
+        self.grid_shaderProg.setUniformMatrix4fv("u_modelMatrix", modelMatrix.data())
 
-        self.renderer.draw(self.vao, self.ebo, self.shaderProg)
+        self.renderer.drawElements(self.grid_vao, self.grid_ebo, self.grid_shaderProg)
+        self.grid_shaderProg.unbind()
+
+        self.dots_shaderProg.bind()
+        self.dots_shaderProg.setUniformMatrix4fv("u_projectionMatrix", self.camera.projectionMatrix.data())
+        self.dots_shaderProg.setUniformMatrix4fv("u_viewMatrix", self.camera.viewMatrix.data())
+        self.dots_shaderProg.setUniformMatrix4fv("u_modelMatrix", axis_modelMatrix.data())
+        self.renderer.drawArrays(self.dots_vao, self.dots_shaderProg, number_of_dots=12)
+
+        self.lines_shaderProg.bind()
+        self.lines_shaderProg.setUniformMatrix4fv("u_projectionMatrix", self.camera.projectionMatrix.data())
+        self.lines_shaderProg.setUniformMatrix4fv("u_viewMatrix", self.camera.viewMatrix.data())
+        self.lines_shaderProg.setUniformMatrix4fv("u_modelMatrix", axis_modelMatrix.data())
+        self.renderer.drawArrays(self.lines_vao, self.lines_shaderProg, number_of_dots=6, draw_type=gl.GL_LINES)
+
+
 
     def resizeGL(self, w: int, h: int):
         self.camera.setProjection(w, h)

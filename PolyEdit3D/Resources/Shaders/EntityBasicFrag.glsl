@@ -4,7 +4,6 @@
 out vec4 fragColor;
 
 sample smooth in vec2 f_TexCoord;
-in vec3 f_vertexPos;
 
 vec4 gridColor;
 

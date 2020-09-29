@@ -53,7 +53,6 @@ class PlyViewportCamera:
             self.__viewZoom -= 0.1
         elif delta > 0 and self.__viewZoom < 9.9:
             self.__viewZoom += 0.1
-            print(self.__viewZoom)
 
     def updateCamera(self):
         self.__viewMatrix.setToIdentity()
