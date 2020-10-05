@@ -6,7 +6,6 @@ from PySide2.QtCore import Qt
 from PolyEdit3D.Widgets import PlyMainWindow
 from PolyEdit3D.GL.Setup import GLSurfaceFormat
 
-
 if __name__ == '__main__':
     QApplication.setAttribute(Qt.AA_UseDesktopOpenGL)
     QSurfaceFormat.setDefaultFormat(GLSurfaceFormat())

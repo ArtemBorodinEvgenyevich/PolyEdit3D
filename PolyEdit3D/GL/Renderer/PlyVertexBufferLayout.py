@@ -41,14 +41,18 @@ class PlyVertexBufferLayout:
         self.__mElementsCount = 0
         self.__mStride = 0
 
+    def __getOffset(self):
+        if self.__mElementsCount != 0:
+            return self.__mElementsCount * ctypes.sizeof(ctypes.c_float)
+        return self.__mElementsCount
+
     def pushFloat(self, elements_count: int):
         self.__mElements.append(VertexAttributeElement(gl.GL_FLOAT, elements_count, self.__getOffset(), False))
         self.__mElementsCount += elements_count
         self.__mStride += elements_count * ctypes.sizeof(ctypes.c_float)
 
-    def __getOffset(self):
-        if self.__mElementsCount != 0:
-            return self.__mElementsCount * ctypes.sizeof(ctypes.c_float)
+    @property
+    def count(self):
         return self.__mElementsCount
 
     @property

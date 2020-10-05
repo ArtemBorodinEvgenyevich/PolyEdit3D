@@ -44,7 +44,7 @@ class PlyViewportCamera:
 
     def pan(self, start: QVector2D, end:QVector2D):
         delta = end - start
-        transform = QVector3D(delta.x() / 50, delta.y() / 50, 0.0)
+        transform = QVector3D(delta.x() / 100, delta.y() / 100, 0.0)
         self.__camEye += transform
         self.__camTarget += transform
 
