@@ -1,9 +1,8 @@
-from OpenGL import GL as gl
 import ctypes
+from OpenGL import GL as gl
 
-from .PlyVertexArray import PlyVertexArray
-from .PlyIndexBuffer import PlyIndexBuffer
-from .PlyShader import PlyShader
+from .PlyViewportCamera import PlyViewportCamera
+from PolyEdit3D.GL.Elements.PlyIMesh import PlyIObjArray, PlyIObjIndexed
 
 
 class PlyRenderer:
@@ -15,15 +14,23 @@ class PlyRenderer:
         gl.glClearColor(0.4, 0.4, 0.4, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-    def drawElements(self, va: PlyVertexArray, ib: PlyIndexBuffer, shader: PlyShader, draw_type=gl.GL_TRIANGLES):
-        shader.bind()
-        va.bind()
-        ib.bind()
-        gl.glDrawElements(draw_type, ib.index_count, gl.GL_UNSIGNED_INT, ctypes.c_void_p(0))
+    def draw(self, ply_object, camera: PlyViewportCamera, draw_type=gl.GL_TRIANGLES):
+        if isinstance(ply_object, PlyIObjIndexed):
+            if hasattr(ply_object, "onDraw"):
+                ply_object.onDraw()
+            ply_object.passUniforms(camera.projectionMatrix, camera.viewMatrix, ply_object.modelMatrix)
 
-    def drawArrays(self, va: PlyVertexArray, shader: PlyShader, draw_type=gl.GL_POINTS, number_of_dots=1, start_index=0):
-        shader.bind()
-        va.bind()
-        gl.glDrawArrays(draw_type, start_index, number_of_dots)
+            va, ib = ply_object.vertexArray, ply_object.indexBuffer
+            va.bind()
+            ib.bind()
+            gl.glDrawElements(draw_type, ib.index_count, gl.GL_UNSIGNED_INT, ctypes.c_void_p(0))
 
+        if isinstance(ply_object, PlyIObjArray):
+            if hasattr(ply_object, "onDraw"):
+                ply_object.onDraw()
+            ply_object.passUniforms(camera.projectionMatrix, camera.viewMatrix, ply_object.modelMatrix)
+
+            va = ply_object.vertexArray
+            va.bind()
+            gl.glDrawArrays(draw_type, 0, ply_object.vertexAmount)
 
