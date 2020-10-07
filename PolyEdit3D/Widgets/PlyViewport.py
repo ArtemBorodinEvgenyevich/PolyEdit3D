@@ -3,6 +3,8 @@ from PolyEdit3D.Widgets import PlyBtnSetWireView
 from PolyEdit3D.GL.Renderer import PlyRenderer, PlyViewportCamera
 from PolyEdit3D.GL.Elements import PlySceneAxisDots, PlySceneAxisLines, PlySceneGrid
 
+from PolyEdit3D.GL.Elements.SceneElements.TMPPlane import TMPPlane
+
 from OpenGL import GL as gl
 from PySide2 import QtWidgets, QtCore, QtGui
 
@@ -24,6 +26,7 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.toolPanel.addButton(self.btnWire, hasSpacer=True)
 
         self.m_mousePos = QtGui.QVector2D()
+        self.m_panStart = False
 
         self.renderer = PlyRenderer()
         self.camera = PlyViewportCamera()
@@ -32,6 +35,8 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.scene_dots = None
         self.scene_lines = None
 
+        self.draw_list = list()
+
         self.__initUI()
 
     def __initUI(self):
@@ -39,6 +44,28 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.setLayout(QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.layout().addWidget(self.toolPanel)
+
+    def screenToWorld(self, mouse_pos: QtGui.QVector2D):
+        tmp = QtGui.QVector4D(
+            2.0 * mouse_pos.x() / self.width() - 1.0,
+            -2.0 * mouse_pos.y() / self.height() + 1.0,
+            -1.0, 1.0
+        )
+        i_tmp = QtGui.QVector4D(
+            (tmp * self.camera.projectionMatrix.inverted()[0]).toVector3D(), 0.0
+        )
+        direction = QtGui.QVector3D(
+            (i_tmp * self.camera.viewMatrix.inverted()[0]).toVector3D().normalized()
+        )
+        cam_pos = QtGui.QVector3D(
+            (QtGui.QVector4D(0.0, 0.0, 0.0, 1.0) * self.camera.viewMatrix.inverted()[0]).toVector3D()
+        )
+
+        normal = QtGui.QVector3D(0.0, 1.0, 0.0)
+        t = -QtGui.QVector3D.dotProduct(cam_pos, normal) / QtGui.QVector3D.dotProduct(direction, normal)
+        result = cam_pos + direction * t
+
+        return result
 
     def initializeGL(self):
         self.renderer.clear()
@@ -52,6 +79,9 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.renderer.clear()
 
         self.camera.updateCamera()
+
+        for obj in self.draw_list:
+            self.renderer.draw(obj, self.camera)
 
         self.renderer.draw(self.grid, self.camera)
         self.renderer.draw(self.scene_dots, self.camera, draw_type=gl.GL_POINTS)
@@ -67,14 +97,33 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
             self.clearFocus()
         return super(PlyViewportWidget, self).eventFilter(watched, event)
 
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
+        if event.key() == QtCore.Qt.Key_Shift:
+            self.m_panStart = True
+
+    def keyReleaseEvent(self, event: QtGui.QKeyEvent):
+        if event.key() == QtCore.Qt.Key_Shift:
+            self.m_panStart = False
+
     def mousePressEvent(self, event: QtGui.QMouseEvent):
+        self.makeCurrent()
         self.m_mousePos = QtGui.QVector2D(event.localPos())
+
+        if event.buttons() == QtCore.Qt.RightButton and not self.m_panStart:
+            vec = self.screenToWorld(self.m_mousePos)
+            print(vec)
+            geo = TMPPlane()
+            geo.translate(vec)
+            self.draw_list.append(geo)
+
+            self.update()
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent):
         if event.buttons() == QtCore.Qt.LeftButton:
             self.camera.rotate(self.m_mousePos, QtGui.QVector2D(event.localPos()))
             self.m_mousePos = QtGui.QVector2D(event.localPos())
-        if event.buttons() == QtCore.Qt.RightButton:
+
+        if event.buttons() == QtCore.Qt.RightButton and self.m_panStart:
             self.camera.pan(self.m_mousePos, QtGui.QVector2D(event.localPos()))
             self.m_mousePos = QtGui.QVector2D(event.localPos())
         self.update()

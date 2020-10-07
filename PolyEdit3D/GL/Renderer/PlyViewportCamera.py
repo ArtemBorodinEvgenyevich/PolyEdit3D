@@ -74,3 +74,12 @@ class PlyViewportCamera:
     @property
     def viewMatrix(self):
         return self.__viewMatrix
+
+    @property
+    def position(self):
+        return self.__camEye
+
+    @property
+    def target(self):
+        return self.__camTarget
+
