@@ -55,7 +55,7 @@ class PlySceneGrid(PlyIObjIndexed):
 
     def onDraw(self):
         self.__modelMatrix.setToIdentity()
-        #self.__modelMatrix.translate(0, -0.001, 0)
+        self.__modelMatrix.translate(0, -0.01, 0)
         self.__modelMatrix.rotate(90, QVector3D(1.0, 0.0, 0.0))
         self.__modelMatrix.scale(1000)
 

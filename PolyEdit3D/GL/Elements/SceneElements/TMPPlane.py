@@ -28,7 +28,8 @@ class TMPPlane(PlyIObjIndexed):
         self.__indexBuffer = None
         self.__vertexBuffer = None
 
-        self.__translate = QVector3D(0.0, 0.0, 0.0)
+        self.__translate = QVector3D()
+        self.__scale = QVector3D()
 
         self.initObject()
 

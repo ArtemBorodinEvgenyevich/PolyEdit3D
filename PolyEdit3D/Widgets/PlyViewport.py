@@ -84,7 +84,7 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.makeCurrent()
         self.camera.mousePos = QtGui.QVector2D(event.localPos())
 
-        if event.buttons() == QtCore.Qt.RightButton:
+        if event.buttons() == QtCore.Qt.RightButton and not self.camera.isPanEnabled:
             click = self.camera.getRayGridIntersecton(self.camera.mousePos)
             tmp = TMPPlane()
             tmp.translate(click)
