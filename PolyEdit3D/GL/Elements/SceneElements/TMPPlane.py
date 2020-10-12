@@ -57,6 +57,7 @@ class TMPPlane(PlyIObjIndexed):
     def onDraw(self):
         self.__modelMatrix.setToIdentity()
         self.__modelMatrix.translate(self.__translate)
+        self.__modelMatrix.rotate(90, QVector3D(1.0, 0.0, 0.0))
 
     def translate(self, vec: QVector3D):
         self.__translate += vec

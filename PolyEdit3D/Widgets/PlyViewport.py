@@ -25,9 +25,6 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.btnWire.geoModeStateChanged.connect(self.onGeoModeChanged)
         self.toolPanel.addButton(self.btnWire, hasSpacer=True)
 
-        self.m_mousePos = QtGui.QVector2D()
-        self.m_panStart = False
-
         self.renderer = PlyRenderer()
         self.camera = PlyViewportCamera()
 
@@ -44,28 +41,6 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.setLayout(QtWidgets.QHBoxLayout())
         self.layout().setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
         self.layout().addWidget(self.toolPanel)
-
-    def screenToWorld(self, mouse_pos: QtGui.QVector2D):
-        tmp = QtGui.QVector4D(
-            2.0 * mouse_pos.x() / self.width() - 1.0,
-            -2.0 * mouse_pos.y() / self.height() + 1.0,
-            -1.0, 1.0
-        )
-        i_tmp = QtGui.QVector4D(
-            (tmp * self.camera.projectionMatrix.inverted()[0]).toVector3D(), 0.0
-        )
-        direction = QtGui.QVector3D(
-            (i_tmp * self.camera.viewMatrix.inverted()[0]).toVector3D().normalized()
-        )
-        cam_pos = QtGui.QVector3D(
-            (QtGui.QVector4D(0.0, 0.0, 0.0, 1.0) * self.camera.viewMatrix.inverted()[0]).toVector3D()
-        )
-
-        normal = QtGui.QVector3D(0.0, 1.0, 0.0)
-        t = -QtGui.QVector3D.dotProduct(cam_pos, normal) / QtGui.QVector3D.dotProduct(direction, normal)
-        result = cam_pos + direction * t
-
-        return result
 
     def initializeGL(self):
         self.renderer.clear()
@@ -99,33 +74,32 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
 
     def keyPressEvent(self, event: QtGui.QKeyEvent):
         if event.key() == QtCore.Qt.Key_Shift:
-            self.m_panStart = True
+            self.camera.isPanEnabled = True
 
     def keyReleaseEvent(self, event: QtGui.QKeyEvent):
         if event.key() == QtCore.Qt.Key_Shift:
-            self.m_panStart = False
+            self.camera.isPanEnabled = False
 
     def mousePressEvent(self, event: QtGui.QMouseEvent):
         self.makeCurrent()
-        self.m_mousePos = QtGui.QVector2D(event.localPos())
+        self.camera.mousePos = QtGui.QVector2D(event.localPos())
 
-        if event.buttons() == QtCore.Qt.RightButton and not self.m_panStart:
-            vec = self.screenToWorld(self.m_mousePos)
-            print(vec)
-            geo = TMPPlane()
-            geo.translate(vec)
-            self.draw_list.append(geo)
-
+        if event.buttons() == QtCore.Qt.RightButton:
+            #click = self.camera.getRayGridIntersecton(QtGui.QVector2D(event.localPos()))
+            click = self.camera.getClick2()
+            tmp = TMPPlane()
+            tmp.translate(click)
+            #print(click)
+            self.draw_list.append(tmp)
             self.update()
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent):
         if event.buttons() == QtCore.Qt.LeftButton:
-            self.camera.rotate(self.m_mousePos, QtGui.QVector2D(event.localPos()))
-            self.m_mousePos = QtGui.QVector2D(event.localPos())
+            self.camera.rotate(self.camera.mousePos, QtGui.QVector2D(event.localPos()))
+            self.camera.mousePos = QtGui.QVector2D(event.localPos())
 
-        if event.buttons() == QtCore.Qt.RightButton and self.m_panStart:
-            self.camera.pan(self.m_mousePos, QtGui.QVector2D(event.localPos()))
-            self.m_mousePos = QtGui.QVector2D(event.localPos())
+        if event.buttons() == QtCore.Qt.RightButton and self.camera.isPanEnabled:
+            self.camera.pan(self.camera.mousePos, QtGui.QVector2D(event.localPos()))
         self.update()
 
     def wheelEvent(self, event:QtGui.QWheelEvent):
