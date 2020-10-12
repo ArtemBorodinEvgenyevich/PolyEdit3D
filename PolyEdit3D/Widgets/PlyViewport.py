@@ -3,6 +3,8 @@ from PolyEdit3D.Widgets import PlyBtnSetWireView
 from PolyEdit3D.GL.Renderer import PlyRenderer, PlyViewportCamera
 from PolyEdit3D.GL.Elements import PlySceneAxisDots, PlySceneAxisLines, PlySceneGrid
 
+from PolyEdit3D.GL.Elements.SceneElements.TMPPlane import TMPPlane
+
 from OpenGL import GL as gl
 from PySide2 import QtWidgets, QtCore, QtGui
 
@@ -23,14 +25,14 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
         self.btnWire.geoModeStateChanged.connect(self.onGeoModeChanged)
         self.toolPanel.addButton(self.btnWire, hasSpacer=True)
 
-        self.m_mousePos = QtGui.QVector2D()
-
         self.renderer = PlyRenderer()
         self.camera = PlyViewportCamera()
 
         self.grid = None
         self.scene_dots = None
         self.scene_lines = None
+
+        self.draw_list = list()
 
         self.__initUI()
 
@@ -53,6 +55,9 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
 
         self.camera.updateCamera()
 
+        for obj in self.draw_list:
+            self.renderer.draw(obj, self.camera)
+
         self.renderer.draw(self.grid, self.camera)
         self.renderer.draw(self.scene_dots, self.camera, draw_type=gl.GL_POINTS)
         self.renderer.draw(self.scene_lines, self.camera, draw_type=gl.GL_LINES)
@@ -67,16 +72,32 @@ class PlyViewportWidget(QtWidgets.QOpenGLWidget):
             self.clearFocus()
         return super(PlyViewportWidget, self).eventFilter(watched, event)
 
+    def keyPressEvent(self, event: QtGui.QKeyEvent):
+        if event.key() == QtCore.Qt.Key_Shift:
+            self.camera.isPanEnabled = True
+
+    def keyReleaseEvent(self, event: QtGui.QKeyEvent):
+        if event.key() == QtCore.Qt.Key_Shift:
+            self.camera.isPanEnabled = False
+
     def mousePressEvent(self, event: QtGui.QMouseEvent):
-        self.m_mousePos = QtGui.QVector2D(event.localPos())
+        self.makeCurrent()
+        self.camera.mousePos = QtGui.QVector2D(event.localPos())
+
+        if event.buttons() == QtCore.Qt.RightButton:
+            click = self.camera.getRayGridIntersecton(self.camera.mousePos)
+            tmp = TMPPlane()
+            tmp.translate(click)
+            self.draw_list.append(tmp)
+            self.update()
 
     def mouseMoveEvent(self, event: QtGui.QMouseEvent):
         if event.buttons() == QtCore.Qt.LeftButton:
-            self.camera.rotate(self.m_mousePos, QtGui.QVector2D(event.localPos()))
-            self.m_mousePos = QtGui.QVector2D(event.localPos())
-        if event.buttons() == QtCore.Qt.RightButton:
-            self.camera.pan(self.m_mousePos, QtGui.QVector2D(event.localPos()))
-            self.m_mousePos = QtGui.QVector2D(event.localPos())
+            self.camera.rotate(self.camera.mousePos, QtGui.QVector2D(event.localPos()))
+            self.camera.mousePos = QtGui.QVector2D(event.localPos())
+
+        if event.buttons() == QtCore.Qt.RightButton and self.camera.isPanEnabled:
+            self.camera.pan(self.camera.mousePos, QtGui.QVector2D(event.localPos()))
         self.update()
 
     def wheelEvent(self, event:QtGui.QWheelEvent):

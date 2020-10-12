@@ -6,10 +6,10 @@ from PolyEdit3D.GL.Elements.PlyIMesh import PlyIObjIndexed
 from PolyEdit3D.GL.Renderer import PlyShader, PlyVertexBufferLayout, PlyVertexBuffer, PlyVertexArray, PlyIndexBuffer
 
 vertices = [
-             0.5,  0.5, 0.0,    1.0, 1.0,
-             0.5, -0.5, 0.0,    1.0, 0.0,
-            -0.5, -0.5, 0.0,    0.0, 0.0,
-            -0.5,  0.5, 0.0,    0.0, 1.0
+             1.0,  1.0, 0.0,
+             1.0, -1.0, 0.0,
+            -1.0, -1.0, 0.0,
+            -1.0,  1.0, 0.0
 ]
 indices = [
             0, 1, 3,
@@ -17,7 +17,7 @@ indices = [
 ]
 
 
-class PlySceneGrid(PlyIObjIndexed):
+class TMPPlane(PlyIObjIndexed):
     """Predefined scene grid object."""
     def __init__(self):
         self.__modelMatrix = QMatrix4x4()
@@ -28,16 +28,17 @@ class PlySceneGrid(PlyIObjIndexed):
         self.__indexBuffer = None
         self.__vertexBuffer = None
 
+        self.__translate = QVector3D(0.0, 0.0, 0.0)
+
         self.initObject()
 
     def initObject(self):
-        self.setShaders(AppPaths.SHADER_ENTITY_BASIC_VERTEX.value, AppPaths.SHADER_ENTITY_BASIC_FRAGMENT.value)
+        self.setShaders(AppPaths.SHADER_BASIC_VERTEX.value, AppPaths.SHADER_BASIC_FRAGMENT.value)
         self.__vertexArray = PlyVertexArray()
         self.__vertexBuffer = PlyVertexBuffer(self.vertices, self.vertices.nbytes)
         self.__indexBuffer = PlyIndexBuffer(self.indices, self.indices.nbytes)
         layout = PlyVertexBufferLayout()
         layout.pushFloat(3)
-        layout.pushFloat(2)
         self.__vertexArray.addBuffer(self.__vertexBuffer, layout)
 
         self.__vertexBuffer.unbind()
@@ -55,9 +56,11 @@ class PlySceneGrid(PlyIObjIndexed):
 
     def onDraw(self):
         self.__modelMatrix.setToIdentity()
-        #self.__modelMatrix.translate(0, -0.001, 0)
+        self.__modelMatrix.translate(self.__translate)
         self.__modelMatrix.rotate(90, QVector3D(1.0, 0.0, 0.0))
-        self.__modelMatrix.scale(1000)
+
+    def translate(self, vec: QVector3D):
+        self.__translate += vec
 
     @property
     def modelMatrix(self):

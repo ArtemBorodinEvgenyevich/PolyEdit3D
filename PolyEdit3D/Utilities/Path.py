@@ -17,7 +17,8 @@ shader_coord_dots_vertex = os.path.join(shaders_path, "CoordDotsVert.glsl")
 shader_coord_dots_fragment = os.path.join(shaders_path, "CoordDotsFrag.glsl")
 shader_coord_lines_vertex = os.path.join(shaders_path, "CoordLinesVert.glsl")
 shader_coord_lines_fragment = os.path.join(shaders_path, "CoordLinesFrag.glsl")
-
+shader_basic_vertex = os.path.join(shaders_path, "BasicVert.glsl")
+shader_basic_fragment = os.path.join(shaders_path, "BasicFrag.glsl")
 
 
 icons_path = os.path.join(resources_path, 'Icons')
@@ -37,6 +38,8 @@ class AppPaths(Enum):
     SHADER_COORD_DOTS_VERTEX = shader_coord_dots_vertex
     SHADER_COORD_LINES_FRAGMENT = shader_coord_lines_fragment
     SHADER_COORD_LINES_VERTEX = shader_coord_lines_vertex
+    SHADER_BASIC_FRAGMENT = shader_basic_fragment
+    SHADER_BASIC_VERTEX = shader_basic_vertex
 
     BTN_WIREFRAME_ICON = btn_wireframe_ico
 
