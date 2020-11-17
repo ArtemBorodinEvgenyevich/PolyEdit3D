@@ -23,6 +23,7 @@ shader_basic_fragment = os.path.join(shaders_path, "BasicFrag.glsl")
 
 icons_path = os.path.join(resources_path, 'Icons')
 btn_wireframe_ico = os.path.join(icons_path, "WireIco.png")
+btn_pln_by_vec_ico = os.path.join(icons_path, "vector.png")
 
 
 @unique
@@ -42,6 +43,7 @@ class AppPaths(Enum):
     SHADER_BASIC_VERTEX = shader_basic_vertex
 
     BTN_WIREFRAME_ICON = btn_wireframe_ico
+    BTN_PLN_VEC_ICON = btn_pln_by_vec_ico
 
 
 

@@ -29,7 +29,7 @@ class TMPPlane(PlyIObjIndexed):
         self.__vertexBuffer = None
 
         self.__translate = QVector3D()
-        self.__scale = QVector3D()
+        self.__scale = QVector3D(1.0, 0.0, 1.0)
 
         self.initObject()
 
@@ -57,11 +57,26 @@ class TMPPlane(PlyIObjIndexed):
 
     def onDraw(self):
         self.__modelMatrix.setToIdentity()
+
         self.__modelMatrix.translate(self.__translate)
+        self.__modelMatrix.scale(self.__scale)
         self.__modelMatrix.rotate(90, QVector3D(1.0, 0.0, 0.0))
 
-    def translate(self, vec: QVector3D):
-        self.__translate += vec
+    @property
+    def translateVector(self):
+        return self.__translate
+
+    @translateVector.setter
+    def translateVector(self, vector: QVector3D):
+        self.__translate = vector
+
+    @property
+    def scaleVector(self):
+        return self.__scale
+
+    @scaleVector.setter
+    def scaleVector(self, vector: QVector3D):
+        self.__scale = vector
 
     @property
     def modelMatrix(self):
